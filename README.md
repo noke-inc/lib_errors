@@ -1,35 +1,64 @@
-# errors [![Travis-CI](https://travis-ci.org/pkg/errors.svg)](https://travis-ci.org/pkg/errors) [![AppVeyor](https://ci.appveyor.com/api/projects/status/b98mptawhudj53ep/branch/master?svg=true)](https://ci.appveyor.com/project/davecheney/errors/branch/master) [![GoDoc](https://godoc.org/github.com/friendsofgo/errors?status.svg)](http://godoc.org/github.com/friendsofgo/errors) [![Report card](https://goreportcard.com/badge/github.com/friendsofgo/errors)](https://goreportcard.com/report/github.com/friendsofgo/errors) [![Sourcegraph](https://sourcegraph.com/github.com/friendsofgo/errors/-/badge.svg)](https://sourcegraph.com/github.com/friendsofgo/errors?badge)
+[![FriendsOfGo](https://img.shields.io/badge/powered%20by-Friends%20of%20Go-73D7E2.svg)](https://friendsofgo.tech)
+[![Go Report Card](https://goreportcard.com/badge/github.com/friendsofgo/errors)](https://goreportcard.com/report/github.com/friendsofgo/errors)
+[![GoDoc](https://godoc.org/github.com/friendsofgo/errors?status.svg)](https://godoc.org/github.com/friendsofgo/errors)
 
-Package errors provides simple error handling primitives.
+# errors
 
-`go get github.com/friendsofgo/errors`
+This package is a fork from [github.com/pkg/errors](https://github.com/pkg/errors) package created by
+[Dave Cheney](https://github.com/davecheney). The original package has no longer accepting proposals for new functionality.
 
-The traditional error handling idiom in Go is roughly akin to
-```go
-if err != nil {
-        return err
-}
-```
-which applied recursively up the call stack results in error reports without context or debugging information. The errors package allows programmers to add context to the failure path in their code in a way that does not destroy the original value of the error.
+With the new errors on [go 1.13](https://godoc.org/errors), the way to using the errors on Go has some
+changes that can be applied into Dave Cheney library. We want to offer one way to migrate your code to new
+errors, but with the minimum refactor, for that we've created this package.
+
+This package provide the same interface that the original library have, but using new [go 1.13](https://godoc.org/errors)
+errors.
+
+## How to start using friendsofgo/errors
+
+If you previously was using the package [github.com/pkg/errors](https://github.com/pkg/errors), you only need
+change your imports for **github.com/friendsofgo/errors**, with this simple change now you're capable to use
+[go 1.13](https://godoc.org/errors) in your code, and use the new methods `As` and `Is` if you want.
+
+Furthermore the method `Wrap` `Wrapf become compatible with `Unwrap` interface of new [go 1.13](https://godoc.org/errors) errors.
 
 ## Adding context to an error
 
-The errors.Wrap function returns a new error that adds context to the original error. For example
+With the original package [go 1.13](https://godoc.org/errors) if you want add context, ergo wrap your error you need to create
+a new error and using the new verb `"%w" like that:
+
+```go
+_, err := ioutil.ReadAll(r)
+if err != nil {
+        return errors.fmt("read failed: %w", err)
+}
+```
+
+Using our library you can do that forgetting to the new verb:
+
 ```go
 _, err := ioutil.ReadAll(r)
 if err != nil {
         return errors.Wrap(err, "read failed")
 }
 ```
+
 ## Retrieving the cause of an error
 
-Using `errors.Wrap` constructs a stack of errors, adding context to the preceding error. Depending on the nature of the error it may be necessary to reverse the operation of errors.Wrap to retrieve the original error for inspection. Any error value which implements this interface can be inspected by `errors.Cause`.
+We want to keep the compatibility with the [github.com/pkg/errors](https://github.com/pkg/errors) package, for that
+our package provides a `Cause` method, but this method is not longer needed, because we can use the new methods `Is` or `As`
+that provides the official package.
+
+So previously if you needed to check an error cause, your error must be implemented the `causer` inteface:
+
 ```go
 type causer interface {
         Cause() error
 }
 ```
-`errors.Cause` will recursively retrieve the topmost error which does not implement `causer`, which is assumed to be the original cause. For example:
+
+`errors.Cause` will recursively retrieve the topmost error which does not implement causer, which is assumed to be the original cause. For example:
+
 ```go
 switch err := errors.Cause(err).(type) {
 case *MyError:
@@ -39,21 +68,31 @@ default:
 }
 ```
 
-[Read the package documentation for more information](https://godoc.org/github.com/friendsofgo/errors).
+But now you can do:
 
-## Roadmap
+```go
+var target *MyError
+if errors.As(err, &target) {
+    // handle specifically
+} else {
+   // unknown error
+}
+```
 
-With the upcoming [Go2 error proposals](https://go.googlesource.com/proposal/+/master/design/go2draft.md) this package is moving into maintenance mode. The roadmap for a 1.0 release is as follows:
+Or if you uses a sentinel error:
 
-- 0.9. Remove pre Go 1.9 support, address outstanding pull requests (if possible)
-- 1.0. Final release.
+```go
+var ErrMyError = errors.New("my sentinel error")
+if errors.Is(err, ErrMyError) {
+    // handle specifically
+} else {
+   // unknown error
+}
+```
+
+## Disclaimer
+This package is only compatible from go1.13 onwards. 
 
 ## Contributing
 
-Because of the Go2 errors changes, this package is not accepting proposals for new functionality. With that said, we welcome pull requests, bug fixes and issue reports. 
-
-Before sending a PR, please discuss your change by raising an issue.
-
-## License
-
-BSD-2-Clause
+[Contributions](https://github.com/friendsofgo/errors/issues?q=is%3Aissue+is%3Aopen) are more than welcome, if you are interested please fork this repo and send your Pull Request.

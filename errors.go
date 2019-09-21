@@ -58,6 +58,25 @@
 // Although the causer interface is not exported by this package, it is
 // considered a part of its stable public interface.
 //
+// With the new standard package error we have two new ways to figure what is the cause of
+// our error.
+//
+//     var target *MyError
+//     if errors.As(err, &target) {
+//            // handle specifically
+//     } else {
+//            // unknown error
+//	   }
+//
+// or even with sentinel errors:
+//
+//     var ErrMyError = errors.New("my sentinel error")
+//     if errors.Is(err, ErrMyError) {
+//           // handle specifically
+//     } else {
+//          // unknown error
+//     }
+//
 // Formatted printing of errors
 //
 // All error values returned from this package implement fmt.Formatter and can

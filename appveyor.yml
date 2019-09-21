@@ -5,6 +5,8 @@ shallow_clone: true # for startup speed
 
 environment:
   GOPATH: C:\gopath
+  matrix:
+    - GO_VERSION: "1.13"
 
 platform:
   - x64

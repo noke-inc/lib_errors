@@ -1,5 +1,7 @@
 [![FriendsOfGo](https://img.shields.io/badge/powered%20by-Friends%20of%20Go-73D7E2.svg)](https://friendsofgo.tech)
+[![CircleCI](https://circleci.com/gh/friendsofgo/errors.svg?style=svg)](https://circleci.com/gh/friendsofgo/errors)
 [![Build status](https://ci.appveyor.com/api/projects/status/phjkr6de4mnb19kq?svg=true)](https://ci.appveyor.com/project/aperezg/errors)
+[![Version](https://img.shields.io/github/release/friendsofgo/errors.svg?style=flat-square)](https://github.com/friendsofgo/errors/releases/latest)
 [![Go Report Card](https://goreportcard.com/badge/github.com/friendsofgo/errors)](https://goreportcard.com/report/github.com/friendsofgo/errors)
 [![GoDoc](https://godoc.org/github.com/friendsofgo/errors?status.svg)](https://godoc.org/github.com/friendsofgo/errors)
 

@@ -5,6 +5,7 @@ shallow_clone: true # for startup speed
 
 environment:
   GOPATH: C:\gopath
+  GO111MODULE: on
 
 stack: go 1.13
 

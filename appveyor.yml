@@ -16,6 +16,7 @@ install:
   - go version
   - go env
   - set PATH=C:\msys64\mingw64\bin;%GOPATH%\bin;c:\go\bin;%PATH%
+  - go mod tidy
   - gcc --version
   - g++ --version
 

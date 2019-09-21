@@ -1,3 +1,9 @@
+// Original package created by Dave Cheney
+// Copyright (c) 2015, Dave Cheney <dave@cheney.net>
+//
+// Modifications of the original package by Friends of Go
+// Copyright (c) 2019, Friends of Go <contact@friendsofgo.tech>
+//
 // Package errors provides simple error handling primitives.
 //
 // The traditional error handling idiom in Go is roughly akin to
@@ -93,6 +99,7 @@
 package errors
 
 import (
+	"errors"
 	"fmt"
 	"io"
 )
@@ -182,12 +189,13 @@ func Wrap(err error, message string) error {
 	if err == nil {
 		return nil
 	}
-	err = &withMessage{
+	wErr := fmt.Errorf("%w", err)
+	wErr = &withMessage{
 		cause: err,
 		msg:   message,
 	}
 	return &withStack{
-		err,
+		wErr,
 		callers(),
 	}
 }
@@ -199,14 +207,23 @@ func Wrapf(err error, format string, args ...interface{}) error {
 	if err == nil {
 		return nil
 	}
-	err = &withMessage{
+	wErr := fmt.Errorf("%w", err)
+	wErr = &withMessage{
 		cause: err,
 		msg:   fmt.Sprintf(format, args...),
 	}
 	return &withStack{
-		err,
+		wErr,
 		callers(),
 	}
+}
+
+func Is(err error, target error) bool {
+	return errors.Is(err, target)
+}
+
+func As(err error, target interface{}) bool {
+	return errors.As(err, target)
 }
 
 // WithMessage annotates err with a new message.
@@ -272,11 +289,11 @@ func Cause(err error) error {
 	}
 
 	for err != nil {
-		cause, ok := err.(causer)
-		if !ok {
+		var c causer
+		if !errors.As(err, &c) {
 			break
 		}
-		err = cause.Cause()
+		err = c.Cause()
 	}
 	return err
 }

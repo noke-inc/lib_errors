@@ -120,7 +120,6 @@
 package errors
 
 import (
-	"errors"
 	"fmt"
 	"io"
 
@@ -325,7 +324,7 @@ func Cause(err error) error {
 
 	for err != nil {
 		var c causer
-		if !errors.As(err, &c) {
+		if !As(err, &c) {
 			break
 		}
 		err = c.Cause()

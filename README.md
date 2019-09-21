@@ -13,7 +13,7 @@ changes that can be applied into Dave Cheney library. We want to offer one way t
 errors, but with the minimum refactor, for that we've created this package.
 
 This package provide the same interface that the original library have, but using new [go 1.13](https://godoc.org/errors)
-errors.
+errors, or in previous version [golang.org/x/xerrors](https://golang.org/x/xerrors) package.
 
 ## How to start using friendsofgo/errors
 
@@ -92,7 +92,8 @@ if errors.Is(err, ErrMyError) {
 ```
 
 ## Disclaimer
-This package is only compatible from go1.13 onwards. 
+This package was created to using with go 1.13 version however if you uses this package with a previous version, the methods
+`As`, `Is`, `Wrap` and `Wrapf` will be using [golang.org/x/xerrors](https://golang.org/x/xerrors) package.
 
 ## Contributing
 

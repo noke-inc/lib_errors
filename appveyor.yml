@@ -5,20 +5,17 @@ shallow_clone: true # for startup speed
 
 environment:
   GOPATH: C:\gopath
-  matrix:
-    - GO_VERSION: "1.13"
+
+stack: go 1.13
 
 platform:
   - x64
 
 # http://www.appveyor.com/docs/installed-software
 install:
-  # some helpful output for debugging builds
   - go version
   - go env
-  # pre-installed MinGW at C:\MinGW is 32bit only
-  # but MSYS2 at C:\msys64 has mingw64
-  - set PATH=C:\msys64\mingw64\bin;%PATH%
+  - set PATH=C:\msys64\mingw64\bin;%GOPATH%\bin;c:\go\bin;%PATH%
   - gcc --version
   - g++ --version
 

@@ -186,6 +186,7 @@ type withStack struct {
 }
 
 func (w *withStack) Cause() error { return w.error }
+func (w *withStack) Unwrap() error { return w.error }
 
 func (w *withStack) Format(s fmt.State, verb rune) {
 	switch verb {
@@ -298,6 +299,8 @@ type withMessage struct {
 
 func (w *withMessage) Error() string { return w.msg + ": " + w.cause.Error() }
 func (w *withMessage) Cause() error  { return w.cause }
+func (w *withMessage) Unwrap() error { return w.cause }
+
 
 func (w *withMessage) Format(s fmt.State, verb rune) {
 	switch verb {
@@ -331,7 +334,7 @@ func Cause(err error) error {
 
 	for err != nil {
 		var c causer
-		if !errors.As(err, &c) {
+		if !As(err, &c) {
 			break
 		}
 		err = c.Cause()

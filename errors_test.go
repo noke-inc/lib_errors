@@ -270,5 +270,4 @@ func TestAs(t *testing.T) {
 	if !As(wrap, &tt) {
 		t.Errorf("Expected that '%v' error and the '%v' error should be of the same type", err, wrap)
 	}
-
 }

@@ -212,13 +212,12 @@ func Wrap(err error, message string) error {
 	if err == nil {
 		return nil
 	}
-	wErr := xerrors.Errorf("%w", err)
-	wErr = &withMessage{
+	err = &withMessage{
 		cause: err,
 		msg:   message,
 	}
 	return &withStack{
-		wErr,
+		err,
 		callers(),
 	}
 }
@@ -230,13 +229,12 @@ func Wrapf(err error, format string, args ...interface{}) error {
 	if err == nil {
 		return nil
 	}
-	wErr := xerrors.Errorf("%w", err)
-	wErr = &withMessage{
+	err = &withMessage{
 		cause: err,
 		msg:   fmt.Sprintf(format, args...),
 	}
 	return &withStack{
-		wErr,
+		err,
 		callers(),
 	}
 }

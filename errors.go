@@ -61,14 +61,14 @@
 // considered a part of its stable public interface.
 //
 // With the new standard package error we have two new ways to figure what is the cause of
-// our error.
+// our error:
 //
 //     var target *MyError
 //     if errors.As(err, &target) {
 //            // handle specifically
 //     } else {
 //            // unknown error
-//	   }
+//     }
 //
 // or even with sentinel errors:
 //
@@ -211,13 +211,12 @@ func Wrap(err error, message string) error {
 	if err == nil {
 		return nil
 	}
-	wErr := fmt.Errorf("%w", err)
-	wErr = &withMessage{
+	err = &withMessage{
 		cause: err,
 		msg:   message,
 	}
 	return &withStack{
-		wErr,
+		err,
 		callers(),
 	}
 }
@@ -229,13 +228,12 @@ func Wrapf(err error, format string, args ...interface{}) error {
 	if err == nil {
 		return nil
 	}
-	wErr := fmt.Errorf("%w", err)
-	wErr = &withMessage{
+	err = &withMessage{
 		cause: err,
 		msg:   fmt.Sprintf(format, args...),
 	}
 	return &withStack{
-		wErr,
+		err,
 		callers(),
 	}
 }

@@ -2,6 +2,7 @@ package errors
 
 import (
 	"errors"
+	stdlib_errors "errors"
 	"fmt"
 	"io"
 	"reflect"
@@ -248,4 +249,26 @@ func TestErrorEquality(t *testing.T) {
 			_ = vals[i] == vals[j] // mustn't panic
 		}
 	}
+}
+
+func TestIs(t *testing.T) {
+	sentinelError := stdlib_errors.New("sentinel error")
+	wrap := Wrap(sentinelError, "wrap error")
+	if !Is(wrap, sentinelError) {
+		t.Errorf("Expected that '%v' error and the '%v' error should be of the same type", sentinelError, wrap)
+	}
+}
+
+func TestAs(t *testing.T) {
+	type myError struct {
+		error
+	}
+	err := &myError{stdlib_errors.New("error")}
+	wrap := Wrap(err, "wrap error")
+
+	var tt *myError
+	if !As(wrap, &tt) {
+		t.Errorf("Expected that '%v' error and the '%v' error should be of the same type", err, wrap)
+	}
+
 }

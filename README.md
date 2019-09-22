@@ -33,7 +33,7 @@ a new error and using the new verb `"%w" like that:
 ```go
 _, err := ioutil.ReadAll(r)
 if err != nil {
-        return errors.fmt("read failed: %w", err)
+        return fmt.Errorf("read failed: %w", err)
 }
 ```
 

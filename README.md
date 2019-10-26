@@ -3,6 +3,7 @@
 [![Build status](https://ci.appveyor.com/api/projects/status/phjkr6de4mnb19kq?svg=true)](https://ci.appveyor.com/project/aperezg/errors)
 [![Version](https://img.shields.io/github/release/friendsofgo/errors.svg?style=flat-square)](https://github.com/friendsofgo/errors/releases/latest)
 [![Go Report Card](https://goreportcard.com/badge/github.com/friendsofgo/errors)](https://goreportcard.com/report/github.com/friendsofgo/errors)
+[![Sourcegraph](https://sourcegraph.com/github.com/friendsofgo/errors/-/badge.svg)](https://sourcegraph.com/github.com/friendsofgo/errors?badge)
 [![GoDoc](https://godoc.org/github.com/friendsofgo/errors?status.svg)](https://godoc.org/github.com/friendsofgo/errors)
 
 # errors

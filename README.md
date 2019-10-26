@@ -24,7 +24,7 @@ If you previously was using the package [github.com/pkg/errors](https://github.c
 change your imports for **github.com/friendsofgo/errors**, with this simple change now you're capable to use
 [go 1.13](https://godoc.org/errors) in your code, and use the new methods `As` and `Is` if you want.
 
-Furthermore the method `Wrap` `Wrapf become compatible with `Unwrap` interface of new [go 1.13](https://godoc.org/errors) errors.
+Furthermore the methods `Wrap` and `Wrapf` become compatible with `Unwrap` interface of new [go 1.13](https://godoc.org/errors) errors.
 
 ## Adding context to an error
 

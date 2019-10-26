@@ -24,12 +24,12 @@ If you previously was using the package [github.com/pkg/errors](https://github.c
 change your imports for **github.com/friendsofgo/errors**, with this simple change now you're capable to use
 [go 1.13](https://godoc.org/errors) in your code, and use the new methods `As` and `Is` if you want.
 
-Furthermore the method `Wrap` `Wrapf become compatible with `Unwrap` interface of new [go 1.13](https://godoc.org/errors) errors.
+Furthermore the methods `Wrap` and `Wrapf` become compatible with `Unwrap` interface of new [go 1.13](https://godoc.org/errors) errors.
 
 ## Adding context to an error
 
 With the original package [go 1.13](https://godoc.org/errors) if you want add context, ergo wrap your error you need to create
-a new error and using the new verb `"%w" like that:
+a new error and using the new verb `"%w"` like that:
 
 ```go
 _, err := ioutil.ReadAll(r)

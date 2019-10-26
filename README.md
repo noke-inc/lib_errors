@@ -29,7 +29,7 @@ Furthermore the methods `Wrap` and `Wrapf` become compatible with `Unwrap` inter
 ## Adding context to an error
 
 With the original package [go 1.13](https://godoc.org/errors) if you want add context, ergo wrap your error you need to create
-a new error and using the new verb `"%w" like that:
+a new error and using the new verb `"%w"` like that:
 
 ```go
 _, err := ioutil.ReadAll(r)

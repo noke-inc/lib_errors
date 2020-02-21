@@ -1,12 +1,13 @@
-// +build go1.13
-
+// Package errors provides simple error handling primitives including stack, annotations, and data.
+//
 // Original package created by Dave Cheney
 // Copyright (c) 2015, Dave Cheney <dave@cheney.net>
 //
 // Modifications of the original package by Friends of Go
 // Copyright (c) 2019, Friends of Go <contact@friendsofgo.tech>
 //
-// Package errors provides simple error handling primitives.
+// Further modifications of the Friends of Go version by Adam Manwaring
+// Copyright (c) 2019, Adam Manwaring <pantsmann@byu.net>
 //
 // The traditional error handling idiom in Go is roughly akin to
 //
@@ -84,11 +85,12 @@
 // All error values returned from this package implement fmt.Formatter and can
 // be formatted by the fmt package. The following verbs are supported:
 //
-//     %s    print the error. If the error has a Cause it will be
+//     %s    print the error. If the error is a wrapper it will be
 //           printed recursively.
 //     %v    see %s
 //     %+v   extended format. Each Frame of the error's StackTrace will
-//           be printed in detail.
+//           be printed in detail. Any key/value pairs recorded WithData()
+//           will also be printed.
 //
 // Retrieving the stack trace of an error or wrapper
 //
@@ -117,10 +119,39 @@
 // considered a part of its stable public interface.
 //
 // See the documentation for Frame.Format for more details.
+//
+// Retrieving data from an error chain
+//
+// Key/value pairs recorded (using WithData or WrapWithData) in errors of the error chain can
+// be retrieved with the following interface:
+//
+//     type dataCacher interface {
+//          DataCache() map[string]interface{}
+//     }
+//
+// The returned map will contain all the key/value pairs from any dataCachers of
+// equal or greater depth in the error chain. For example
+// (assuming the dataError definition above):
+//
+//     var d dataError
+//     if errors.As(err, d) {
+//          kv := d.DataCache()
+//     }
+//
+// Note that if more than one error in the chain contains the same key, DataCache()
+// returns only the shallowest value for that key. That is:
+//     err = errors.WithData(err, "deep", 1, "dup", 1)
+//     kv := WithData(err, "dup" 2, "shallow", 2).DataCache()
+//     fmt.Printf("key/value pairs: %v", kv)
+//
+//     // Example Output:
+//     // key/value pairs: map[deep:1 dup:2 shallow:2]
+//
+// The when using %+v to format the error all keys and values are output at the level
+// they were set.
 package errors
 
 import (
-	"errors"
 	"fmt"
 	"io"
 )
@@ -185,14 +216,13 @@ type withStack struct {
 	*stack
 }
 
-func (w *withStack) Cause() error { return w.error }
 func (w *withStack) Unwrap() error { return w.error }
 
 func (w *withStack) Format(s fmt.State, verb rune) {
 	switch verb {
 	case 'v':
 		if s.Flag('+') {
-			fmt.Fprintf(s, "%+v", w.Cause())
+			fmt.Fprintf(s, "%+v", w.Unwrap())
 			w.stack.Format(s, verb)
 			return
 		}
@@ -238,34 +268,6 @@ func Wrapf(err error, format string, args ...interface{}) error {
 	}
 }
 
-// Is reports whether any error in err's chain matches target.
-//
-// The chain consists of err itself followed by the sequence of errors obtained by
-// repeatedly calling Unwrap.
-//
-// An error is considered to match a target if it is equal to that target or if
-// it implements a method Is(error) bool such that Is(target) returns true.
-func Is(err error, target error) bool {
-	return errors.Is(err, target)
-}
-
-// As finds the first error in err's chain that matches target, and if so, sets
-// target to that error value and returns true.
-//
-// The chain consists of err itself followed by the sequence of errors obtained by
-// repeatedly calling Unwrap.
-//
-// An error matches target if the error's concrete value is assignable to the value
-// pointed to by target, or if the error has a method As(interface{}) bool such that
-// As(target) returns true. In the latter case, the As method is responsible for
-// setting target.
-//
-// As will panic if target is not a non-nil pointer to either a type that implements
-// error, or to any interface type. As returns false if err is nil.
-func As(err error, target interface{}) bool {
-	return errors.As(err, target)
-}
-
 // WithMessage annotates err with a new message.
 // If err is nil, WithMessage returns nil.
 func WithMessage(err error, message string) error {
@@ -296,15 +298,14 @@ type withMessage struct {
 }
 
 func (w *withMessage) Error() string { return w.msg + ": " + w.cause.Error() }
-func (w *withMessage) Cause() error  { return w.cause }
-func (w *withMessage) Unwrap() error { return w.cause }
 
+func (w *withMessage) Unwrap() error { return w.cause }
 
 func (w *withMessage) Format(s fmt.State, verb rune) {
 	switch verb {
 	case 'v':
 		if s.Flag('+') {
-			fmt.Fprintf(s, "%+v\n", w.Cause())
+			fmt.Fprintf(s, "%+v\n", w.Unwrap())
 			io.WriteString(s, w.msg)
 			return
 		}
@@ -314,28 +315,113 @@ func (w *withMessage) Format(s fmt.State, verb rune) {
 	}
 }
 
+// WithData annotates err with a map of key/value pairs.
+// keyVals should be passed in as pairs; the first of each pair being a string (the key).
+// If an odd number of keyVals are passed in, the last one is ignored.
+// If a key value is not a string, it and the next keyVal element (the value) are skipped.
+// If err is nil, WithData returns nil.
+func WithData(err error, keyVals ...interface{}) error {
+	if err == nil {
+		return nil
+	}
+	e := &withData{
+		err,
+		make(map[string]interface{}),
+	}
+	for i := 0; (i + 1) < len(keyVals); i += 2 {
+		if key, ok := keyVals[i].(string); !ok {
+			continue
+		} else {
+			e.data[key] = keyVals[i+1]
+		}
+	}
+	return e
+}
+
+// WrapWithData returns an error annotating err with a stack trace
+// at the point WrapWithData is called, the supplied message, and
+// any supplied key/value pairs.
+// If err is nil, WrapWithData returns nil.
+func WrapWithData(err error, message string, keyVals ...interface{}) error {
+	if err == nil {
+		return nil
+	}
+	err = &withMessage{
+		cause: err,
+		msg:   message,
+	}
+	err = WithData(err, keyVals...)
+	return &withStack{
+		err,
+		callers(),
+	}
+}
+
+type withData struct {
+	error
+	data map[string]interface{}
+}
+
+// Unwrap provides compatibility for Go 1.13 error chains.
+func (w *withData) Unwrap() error { return w.error }
+
+// DataCache returns all key/value pairs in the error (including from wrapped errors)
+func (w *withData) DataCache() map[string]interface{} {
+	type dataCacher interface {
+		DataCache() map[string]interface{}
+	}
+
+	var data dataCacher
+	var kv map[string]interface{}
+
+	if As(w.error, &data) {
+		kv = data.DataCache()
+	} else {
+		kv = make(map[string]interface{})
+	}
+	for k, v := range w.data {
+		kv[k] = v
+	}
+	return kv
+}
+
+func (w *withData) Format(s fmt.State, verb rune) {
+	switch verb {
+	case 'v':
+		if s.Flag('+') {
+			if len(w.data) > 0 {
+				fmt.Fprintf(s, "%+v\nerror data: %v", w.Unwrap(), w.data)
+			} else {
+				fmt.Fprintf(s, "%+v", w.Unwrap())
+			}
+			return
+		}
+		fallthrough
+	case 's':
+		io.WriteString(s, w.Error())
+	case 'q':
+		fmt.Fprintf(s, "%q", w.Error())
+	}
+}
+
 // Cause returns the underlying cause of the error, if possible.
-// An error value has a cause if it implements the following
-// interface:
+// An error value has a cause if it implements the standard
+// errors.Wrapper interface:
 //
-//     type causer interface {
-//            Cause() error
+//     type Wrapper interface {
+//            Unwrap() error
 //     }
 //
-// If the error does not implement Cause, the original error will
+// If the error does not implement Wrapper, the original error will
 // be returned. If the error is nil, nil will be returned without further
 // investigation.
 func Cause(err error) error {
-	type causer interface {
-		Cause() error
-	}
-
 	for err != nil {
-		var c causer
+		var c Wrapper
 		if !As(err, &c) {
 			break
 		}
-		err = c.Cause()
+		err = c.Unwrap()
 	}
 	return err
 }

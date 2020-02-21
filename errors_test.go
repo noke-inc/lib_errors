@@ -97,6 +97,12 @@ func TestCause(t *testing.T) {
 	}, {
 		WithStack(io.EOF),
 		io.EOF,
+	}, {
+		WithData(nil),
+		nil,
+	}, {
+		WithData(io.EOF, "key", "val"),
+		io.EOF,
 	}}
 
 	for i, tt := range tests {
@@ -225,6 +231,129 @@ func TestWithMessagef(t *testing.T) {
 	}
 }
 
+func TestWithDataNil(t *testing.T) {
+	got := WithData(nil)
+	if got != nil {
+		t.Errorf("WithData(nil): got %#v, expected nil", got)
+	}
+}
+
+func TestWithData(t *testing.T) {
+	tests := []struct {
+		err        error
+		keyVal     []interface{}
+		want       string
+		wantedData map[string]interface{}
+	}{
+		{io.EOF,
+			[]interface{}{"first", 1},
+			"EOF",
+			map[string]interface{}{"first": 1},
+		},
+		{WithData(io.EOF, "first", 1, "greeting", "hi", 12, 10, "even", false, "odd"),
+			[]interface{}{"second", 2, "greeting", "hello"},
+			"EOF",
+			map[string]interface{}{"second": 2, "greeting": "hello", "first": 1, "even": false},
+		},
+	}
+
+	type dataCacher interface {
+		DataCache() map[string]interface{}
+	}
+	var d dataCacher
+
+	for _, tt := range tests {
+		err := WithData(tt.err, tt.keyVal...)
+		got := err.Error()
+		if got != tt.want {
+			t.Errorf("WithData(%v): got: %v, want %v", tt.err, got, tt.want)
+		}
+
+		if As(err, &d) {
+			kv := d.DataCache()
+			if eq := reflect.DeepEqual(kv, tt.wantedData); !eq {
+				t.Errorf("WithData(%v): got: %v, want %v", tt.err, kv, tt.wantedData)
+			}
+		} else {
+			t.Errorf("WithData(%v) not a DataError %v", err, reflect.TypeOf(err))
+		}
+
+		// test data while top of chain is not dataCacher
+		err = WithMessage(err, "top")
+		if As(err, &d) {
+			kv := d.DataCache()
+			if eq := reflect.DeepEqual(kv, tt.wantedData); !eq {
+				t.Errorf("WithData(%v): got: %v, want %v", tt.err, kv, tt.wantedData)
+			}
+		} else {
+			t.Errorf("WithData(%v) not a DataError %v", err, reflect.TypeOf(err))
+		}
+	}
+}
+
+func TestWrapWithDataNil(t *testing.T) {
+	got := WrapWithData(nil, "test", "key", "val")
+	if got != nil {
+		t.Errorf("WithData(nil): got %#v, expected nil", got)
+	}
+}
+
+func TestWrapWithData(t *testing.T) {
+	tests := []struct {
+		err        error
+		message    string
+		keyVal     []interface{}
+		want       string
+		wantedData map[string]interface{}
+	}{
+		{	io.EOF,
+			"message",
+			[]interface{}{"first", 1},
+			"message: EOF",
+			map[string]interface{}{"first": 1},
+		},
+		{	WrapWithData(io.EOF, "message1", "first", 1, "greeting", "hi", 12, 10, "even", false, "odd"),
+			"message2",
+			[]interface{}{"second", 2, "greeting", "hello"},
+			"message2: message1: EOF",
+			map[string]interface{}{"second": 2, "greeting": "hello", "first": 1, "even": false},
+		},
+	}
+
+	type dataCacher interface {
+		DataCache() map[string]interface{}
+	}
+	var d dataCacher
+
+	for _, tt := range tests {
+		err := WrapWithData(tt.err, tt.message, tt.keyVal...)
+		got := err.Error()
+		if got != tt.want {
+			t.Errorf("WithWrapData(%v, %v, %v): got: %v, want %v", tt.err, tt.message, tt.keyVal, got, tt.want)
+		}
+
+		if As(err, &d) {
+			kv := d.DataCache()
+			if eq := reflect.DeepEqual(kv, tt.wantedData); !eq {
+				t.Errorf("WithWrapData(%v, %v, %v): got: %v, want %v", tt.err, tt.message, tt.keyVal, kv, tt.wantedData)
+			}
+		} else {
+			t.Errorf("WithWrapData(%v) not a dataCacher %v", err, reflect.TypeOf(err))
+		}
+
+		// test data while top of chain is not dataCacher
+		err = WithMessage(err, "top")
+		if As(err, &d) {
+			kv := d.DataCache()
+			if eq := reflect.DeepEqual(kv, tt.wantedData); !eq {
+				t.Errorf("WithWrapData(%v, %v, %v): got: %v, want %v", tt.err, tt.message, tt.keyVal, kv, tt.wantedData)
+			}
+		} else {
+			t.Errorf("WithWrapData(%v) not a dataCacher %v", err, reflect.TypeOf(err))
+		}
+	}
+}
+
 // errors.New, etc values are not expected to be compared by value
 // but the change in errors#27 made them incomparable. Assert that
 // various kinds of errors have a functional equality operator, even
@@ -242,6 +371,8 @@ func TestErrorEquality(t *testing.T) {
 		WithMessage(io.EOF, "whoops"),
 		WithStack(io.EOF),
 		WithStack(nil),
+		WithData(io.EOF, "key", "val"),
+		WithData(nil, "key", "val"),
 	}
 
 	for i := range vals {

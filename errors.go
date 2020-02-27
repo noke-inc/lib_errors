@@ -156,6 +156,54 @@ import (
 	"io"
 )
 
+// Annotatable represents errors that are unwrappable and formatable.
+// Errors that implement special behaviors should implement this interface 
+// either directly or through embedding in order to avoid breaking Wrap() semantics.
+// As a simple example, given the following definitions:
+//    type mySpecial struct { errors.Annotatable }
+//    func (m mySpecial) Special() bool { return true }
+// the following code would add the Special() behavior to a wrapped error
+//    specialErr := mySpecial{errors.Wrap(someGenericError, "You are now a special error").(errors.Annotatable)}
+type Annotatable interface {
+	error
+	fmt.Formatter
+	Wrapper
+}
+
+// Base is an error with basic annotatable functionality.
+// It can be used to simply add Annotatable to special error behaviors by extending 
+// an embedded error to fulfill Annotatable. For example given the following definitions:
+//    type mySpecial struct { errors.Annotatable }
+//    func (m mySpecial) Special() bool { return true }
+// the following would add Special() as a behavior to someGenericError and this would be
+// findable using errors.As and one would still be able to output stack traces inside of
+// someGenericError (if they exist).
+//    specialErr := mySpecial{errors.Base{someGenericError}}
+type Base struct { Err error }
+
+// Error returns the error as a string
+func (b Base) Error() string { return b.Err.Error() }
+
+// Unwrap returns the internal error
+func (b Base) Unwrap() error { return b.Err }
+
+// Format outputs the error based on the given format state and verbs
+func (b Base) Format(f fmt.State, verb rune) {
+	switch verb {
+	case 'v':
+		if f.Flag('+') {
+			fmt.Fprintf(f, "%+v", b.Err)
+			return
+		}
+		fallthrough
+	case 's':
+		io.WriteString(f, b.Err.Error())
+	case 'q':
+		fmt.Fprintf(f, "%q", b.Err)
+	}
+}
+
+
 // New returns an error with the supplied message.
 // New also records the stack trace at the point it was called.
 func New(message string) error {
@@ -242,7 +290,7 @@ func Wrap(err error, message string) error {
 		return nil
 	}
 	err = &withMessage{
-		cause: err,
+		error: err,
 		msg:   message,
 	}
 	return &withStack{
@@ -259,7 +307,7 @@ func Wrapf(err error, format string, args ...interface{}) error {
 		return nil
 	}
 	err = &withMessage{
-		cause: err,
+		error: err,
 		msg:   fmt.Sprintf(format, args...),
 	}
 	return &withStack{
@@ -275,7 +323,7 @@ func WithMessage(err error, message string) error {
 		return nil
 	}
 	return &withMessage{
-		cause: err,
+		error: err,
 		msg:   message,
 	}
 }
@@ -287,19 +335,19 @@ func WithMessagef(err error, format string, args ...interface{}) error {
 		return nil
 	}
 	return &withMessage{
-		cause: err,
+		error: err,
 		msg:   fmt.Sprintf(format, args...),
 	}
 }
 
 type withMessage struct {
-	cause error
-	msg   string
+	error
+	msg string
 }
 
-func (w *withMessage) Error() string { return w.msg + ": " + w.cause.Error() }
+func (w *withMessage) Error() string { return w.msg + ": " + w.error.Error() }
 
-func (w *withMessage) Unwrap() error { return w.cause }
+func (w *withMessage) Unwrap() error { return w.error }
 
 func (w *withMessage) Format(s fmt.State, verb rune) {
 	switch verb {
@@ -347,7 +395,7 @@ func WrapWithData(err error, message string, keyVals ...interface{}) error {
 		return nil
 	}
 	err = &withMessage{
-		cause: err,
+		error: err,
 		msg:   message,
 	}
 	err = WithData(err, keyVals...)

@@ -41,4 +41,7 @@ func Unwrap(err error) error {
 }
 
 // A Wrapper provides context around another error.
-type Wrapper stderrors.Wrapper
+type Wrapper interface {
+	error
+	Unwrap() error
+}

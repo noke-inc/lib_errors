@@ -1,4 +1,4 @@
-module github.com/friendsofgo/errors
+module github.com/pantsmann/errors
 
 go 1.13
 

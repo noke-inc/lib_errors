@@ -156,22 +156,8 @@ import (
 	"io"
 )
 
-// Annotatable represents errors that are unwrappable and formatable.
-// Errors that implement special behaviors should implement this interface 
-// either directly or through embedding in order to avoid breaking Wrap() semantics.
-// As a simple example, given the following definitions:
-//    type mySpecial struct { errors.Annotatable }
-//    func (m mySpecial) Special() bool { return true }
-// the following code would add the Special() behavior to a wrapped error
-//    specialErr := mySpecial{errors.Wrap(someGenericError, "You are now a special error").(errors.Annotatable)}
-type Annotatable interface {
-	error
-	fmt.Formatter
-	Wrapper
-}
-
 // Base is an error with basic annotatable functionality.
-// It can be used to simply add Annotatable to special error behaviors by extending 
+// It can be used to simply add Annotatable to special error behaviors by extending
 // an embedded error to fulfill Annotatable. For example given the following definitions:
 //    type mySpecial struct { errors.Annotatable }
 //    func (m mySpecial) Special() bool { return true }
@@ -179,7 +165,7 @@ type Annotatable interface {
 // findable using errors.As and one would still be able to output stack traces inside of
 // someGenericError (if they exist).
 //    specialErr := mySpecial{errors.Base{someGenericError}}
-type Base struct { Err error }
+type Base struct{ Err error }
 
 // Error returns the error as a string
 func (b Base) Error() string { return b.Err.Error() }
@@ -202,7 +188,6 @@ func (b Base) Format(f fmt.State, verb rune) {
 		fmt.Fprintf(f, "%q", b.Err)
 	}
 }
-
 
 // New returns an error with the supplied message.
 // New also records the stack trace at the point it was called.
@@ -438,7 +423,7 @@ func (w *withData) Format(s fmt.State, verb rune) {
 	case 'v':
 		if s.Flag('+') {
 			if len(w.data) > 0 {
-				fmt.Fprintf(s, "%+v\nerror data: %v", w.Unwrap(), w.data)
+				fmt.Fprintf(s, "%+v\nERROR DATA: %v", w.Unwrap(), w.data)
 			} else {
 				fmt.Fprintf(s, "%+v", w.Unwrap())
 			}

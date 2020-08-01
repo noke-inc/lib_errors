@@ -3,8 +3,24 @@
 package errors
 
 import (
+	"fmt"
+
 	"golang.org/x/xerrors"
 )
+
+// Annotatable represents errors that are unwrappable and formatable.
+// Errors that implement special behaviors should implement this interface
+// either directly or through embedding in order to avoid breaking Wrap() semantics.
+// As a simple example, given the following definitions:
+//    type mySpecial struct { errors.Annotatable }
+//    func (m mySpecial) Special() bool { return true }
+// the following code would add the Special() behavior to a wrapped error
+//    specialErr := mySpecial{errors.Wrap(someGenericError, "You are now a special error").(errors.Annotatable)}
+type Annotatable interface {
+	error
+	fmt.Formatter
+	Wrapper
+}
 
 // Is reports whether any error in err's chain matches target.
 //

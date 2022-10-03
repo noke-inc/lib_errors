@@ -134,14 +134,14 @@
 // (assuming the dataError definition above):
 //
 //     var d dataError
-//     if errors.As(err, d) {
+//     if errors.As(err, &d) {
 //          kv := d.DataCache()
 //     }
 //
 // Note that if more than one error in the chain contains the same key, DataCache()
 // returns only the shallowest value for that key. That is:
 //     err = errors.WithData(err, "deep", 1, "dup", 1)
-//     kv := WithData(err, "dup" 2, "shallow", 2).DataCache()
+//     kv := errors.WithData(err, "dup" 2, "shallow", 2).DataCache()
 //     fmt.Printf("key/value pairs: %v", kv)
 //
 //     // Example Output:

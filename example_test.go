@@ -142,9 +142,9 @@ func ExampleWrap_extended() {
 	//      /home/dfc/src/github.com/pantsmann/errors/example_test.go:50: outer
 }
 
-func ExampleWrapf() {
+func ExampleWrap_formatted() {
 	cause := errors.New("whoops")
-	err := errors.Wrapf(cause, "oh noes #%d", 2)
+	err := errors.Wrap(cause, "oh noes #%d", 2)
 	fmt.Println(err)
 
 	// Output: oh noes #2: whoops

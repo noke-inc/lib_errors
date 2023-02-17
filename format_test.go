@@ -38,6 +38,7 @@ func TestFormatNew(t *testing.T) {
 	for i, tt := range tests {
 		testFormatRegexp(t, i, tt.error, tt.format, tt.want)
 	}
+
 }
 
 func TestFormatErrorf(t *testing.T) {
@@ -124,30 +125,30 @@ func TestFormatWrapf(t *testing.T) {
 		format string
 		want   string
 	}{{
-		Wrapf(io.EOF, "error%d", 2),
+		Wrap(io.EOF, "error%d", 2),
 		"%s",
 		"error2: EOF",
 	}, {
-		Wrapf(io.EOF, "error%d", 2),
+		Wrap(io.EOF, "error%d", 2),
 		"%v",
 		"error2: EOF",
 	}, {
-		Wrapf(io.EOF, "error%d", 2),
+		Wrap(io.EOF, "error%d", 2),
 		"%+v",
 		"EOF\n" +
 			"error2\n" +
 			"github.com/pantsmann/errors.TestFormatWrapf\n" +
 			fmt.Sprintf("\t.+/github.com/pantsmann/errors/format_test.go:%d", lineNum(-5)),
 	}, {
-		Wrapf(New("error"), "error%d", 2),
+		Wrap(New("error"), "error%d", 2),
 		"%s",
 		"error2: error",
 	}, {
-		Wrapf(New("error"), "error%d", 2),
+		Wrap(New("error"), "error%d", 2),
 		"%v",
 		"error2: error",
 	}, {
-		Wrapf(New("error"), "error%d", 2),
+		Wrap(New("error"), "error%d", 2),
 		"%+v",
 		"error\n" +
 			"github.com/pantsmann/errors.TestFormatWrapf\n" +
@@ -203,7 +204,7 @@ func TestFormatWithStack(t *testing.T) {
 			"github.com/pantsmann/errors.TestFormatWithStack\n" +
 				fmt.Sprintf("\t.+/github.com/pantsmann/errors/format_test.go:%d", lineNum(-6))},
 	}, {
-		WithStack(WithStack(Wrapf(io.EOF, "message"))),
+		WithStack(WithStack(Wrap(io.EOF, "message"))),
 		"%+v",
 		[]string{"EOF",
 			"message",
@@ -314,46 +315,42 @@ func TestFormatWithData(t *testing.T) {
 		format string
 		want   []string
 	}{{
-		WithData(io.EOF, "key", "val"),
+		WithData(io.EOF, KVPairs{"key": "val"}),
 		"%s",
 		[]string{"EOF"},
 	}, {
-		WithData(io.EOF, "key", "val"),
+		WithData(io.EOF, KVPairs{"key": "val"}),
 		"%v",
 		[]string{"EOF"},
 	}, {
-		WithData(io.EOF, "key", "val"),
+		WithData(io.EOF, KVPairs{"key": "val"}),
 		"%+v",
 		[]string{"EOF",
-			"error data: map[key:val]"},
+			"ERROR DATA: map[key:val]"},
 	}, {
-		WithData(io.EOF, 1, 2, "nodata"), // 1 is not a valid key, "nodata" is a valid key but there is no val
-		"%+v",
-		[]string{"EOF"},
-	}, {
-		WithData(New("error"), "key", "val"),
+		WithData(New("error"), KVPairs{"key": "val"}),
 		"%s",
 		[]string{"error"},
 	}, {
-		WithData(New("error"), "key", "val"),
+		WithData(New("error"), KVPairs{"key": "val"}),
 		"%v",
 		[]string{"error"},
 	}, {
-		WithData(New("error"), "key", "val"),
+		WithData(New("error"), KVPairs{"key": "val"}),
 		"%+v",
 		[]string{"error",
 			fmt.Sprintf("github.com/pantsmann/errors.TestFormatWithData\n" +
 				"\t.+/github.com/pantsmann/errors/format_test.go:%d", lineNum(-4)),
-			"error data: map[key:val]"},
+			"ERROR DATA: map[key:val]"},
 	}, {
-		WithData(WithStack(io.EOF), "key", "val"),
+		WithData(WithStack(io.EOF), KVPairs{"key": "val"}),
 		"%+v",
 		[]string{"EOF",
 			fmt.Sprintf("github.com/pantsmann/errors.TestFormatWithData\n" +
 				"\t.+/github.com/pantsmann/errors/format_test.go:%d", lineNum(-4)),
-			"error data: map[key:val]"},
+			"ERROR DATA: map[key:val]"},
 	}, {
-		WithData(WithStack(Wrapf(io.EOF, "message")), "key", "val"),
+		WithData(WithStack(Wrap(io.EOF, "message")), KVPairs{"key": "val"}),
 		"%+v",
 		[]string{"EOF",
 			"message",
@@ -361,154 +358,34 @@ func TestFormatWithData(t *testing.T) {
 				"\t.+/github.com/pantsmann/errors/format_test.go:%d", lineNum(-5)),
 			fmt.Sprintf("github.com/pantsmann/errors.TestFormatWithData\n" +
 				"\t.+/github.com/pantsmann/errors/format_test.go:%d", lineNum(-7)),
-			"error data: map[key:val]"},
+			"ERROR DATA: map[key:val]"},
 	}, {
-		WithData(Errorf("error%d", 1), "key", "val"),
+		WithData(Errorf("error%d", 1), KVPairs{"key": "val"}),
 		"%+v",
 		[]string{"error1",
 		fmt.Sprintf("github.com/pantsmann/errors.TestFormatWithData\n" +
 			"\t.+/github.com/pantsmann/errors/format_test.go:%d", lineNum(-4)),
-		"error data: map[key:val]"},
+		"ERROR DATA: map[key:val]"},
 	}, {
 		WithData(
 			WithStack(
 				WithMessage(
 					WithData(
-						Wrapf(io.EOF, "message"), 
-						"key", 1),
+						Wrap(io.EOF, "message"), 
+						KVPairs{"key": 1}),
 					"message2"),
 				),
-			"key", "val"),
+			KVPairs{"key": "val"}),
 		"%+v",
 		[]string{"EOF",
 			"message",
 			fmt.Sprintf("github.com/pantsmann/errors.TestFormatWithData\n" +
 				"\t.+/github.com/pantsmann/errors/format_test.go:%d", lineNum(-9)),
-			"error data: map[key:1]",
+			"ERROR DATA: map[key:1]",
 			"message2",
 			fmt.Sprintf("github.com/pantsmann/errors.TestFormatWithData\n" +
 				"\t.+/github.com/pantsmann/errors/format_test.go:%d", lineNum(-16)),
-			"error data: map[key:val]"},
-	}}
-
-	for i, tt := range tests {
-		testFormatCompleteCompare(t, i, tt.error, tt.format, tt.want, true)
-	}
-}
-
-func TestFormatWrapWithData(t *testing.T) {
-	tests := []struct {
-		error
-		format string
-		want   []string
-	}{{ // 1
-		WrapWithData(io.EOF, "message", "key", "val"),
-		"%s",
-		[]string{"message: EOF"},
-	}, { // 2
-		WrapWithData(io.EOF, "message", "key", "val"),
-		"%v",
-		[]string{"message: EOF"},
-	}, { // 3
-		WrapWithData(WrapWithData(io.EOF, "message", "key", "val"), "message2", "key2", "val2"),
-		"%v",
-		[]string{"message2: message: EOF"},
-	}, { // 4
-		WrapWithData(WrapWithData(io.EOF, "message", "key", "val"), "message2", "key2", "val2"),
-		"%+v",
-		[]string{"EOF",
-			"message",
-			"error data: map[key:val]",
-			"github.com/pantsmann/errors.TestFormatWrapWithData\n" +
-				fmt.Sprintf("\t.+/github.com/pantsmann/errors/format_test.go:%d", lineNum(-6)),
-			"message2",
-			"error data: map[key2:val2]",
-			"github.com/pantsmann/errors.TestFormatWrapWithData\n" +
-				fmt.Sprintf("\t.+/github.com/pantsmann/errors/format_test.go:%d", lineNum(-10))},
-	}, { // 5
-		WrapWithData(io.EOF, "message", 1, 2, "nodata"), // 1 is not a valid key, "nodata" is a valid key but there is no val
-		"%+v",
-		[]string{"EOF",
-			"message",
-			fmt.Sprintf("github.com/pantsmann/errors.TestFormatWrapWithData\n" +
-				"\t.+/github.com/pantsmann/errors/format_test.go:%d", lineNum(-5))},
-	}, { // 6
-		WrapWithData(New("error"), "message", "key", "val"),
-		"%s",
-		[]string{"message: error"},
-	}, { // 7
-		WrapWithData(New("error"), "message", "key", "val"),
-		"%v",
-		[]string{"message: error"},
-	}, { // 8
-		WrapWithData(New("error"), "message", "key", "val"),
-		"%+v",
-		[]string{"error",
-			fmt.Sprintf("github.com/pantsmann/errors.TestFormatWrapWithData\n" +
-				"\t.+/github.com/pantsmann/errors/format_test.go:%d", lineNum(-4)),
-			"message",
-			"error data: map[key:val]",
-			fmt.Sprintf("github.com/pantsmann/errors.TestFormatWrapWithData\n" +
-				"\t.+/github.com/pantsmann/errors/format_test.go:%d", lineNum(-8))},
-	}, { // 9
-		WrapWithData(WithStack(io.EOF), "message", "key", "val"),
-		"%+v",
-		[]string{"EOF",
-			fmt.Sprintf("github.com/pantsmann/errors.TestFormatWrapWithData\n" +
-				"\t.+/github.com/pantsmann/errors/format_test.go:%d", lineNum(-4)),
-			"message",
-			"error data: map[key:val]",
-			fmt.Sprintf("github.com/pantsmann/errors.TestFormatWrapWithData\n" +
-				"\t.+/github.com/pantsmann/errors/format_test.go:%d", lineNum(-8))},
-	}, { // 10
-		WrapWithData(WithStack(Wrapf(io.EOF, "message")), "message2", "key", "val"),
-		"%+v",
-		[]string{"EOF",
-			"message",
-			fmt.Sprintf("github.com/pantsmann/errors.TestFormatWrapWithData\n" +
-				"\t.+/github.com/pantsmann/errors/format_test.go:%d", lineNum(-5)),
-			fmt.Sprintf("github.com/pantsmann/errors.TestFormatWrapWithData\n" +
-				"\t.+/github.com/pantsmann/errors/format_test.go:%d", lineNum(-7)),
-			"message2",
-			"error data: map[key:val]",
-			fmt.Sprintf("github.com/pantsmann/errors.TestFormatWrapWithData\n" +
-				"\t.+/github.com/pantsmann/errors/format_test.go:%d", lineNum(-11))},
-	}, { // 11
-		WrapWithData(Errorf("error%d", 1), "message", "key", "val"),
-		"%+v",
-		[]string{"error1",
-		fmt.Sprintf("github.com/pantsmann/errors.TestFormatWrapWithData\n" +
-			"\t.+/github.com/pantsmann/errors/format_test.go:%d", lineNum(-4)),
-		"message",
-		"error data: map[key:val]",
-		fmt.Sprintf("github.com/pantsmann/errors.TestFormatWrapWithData\n" +
-			"\t.+/github.com/pantsmann/errors/format_test.go:%d", lineNum(-8))},
-	}, { // 12
-		WrapWithData(
-			WithStack(
-				WithMessage(
-					WrapWithData(
-						Wrapf(io.EOF, "message"), 
-						"messageA", "key", 1),
-					"message2"),
-				),
-			"messageB", "key", "val"),
-		"%+v",
-		[]string{"EOF",
-			"message",
-			fmt.Sprintf("github.com/pantsmann/errors.TestFormatWrapWithData\n" +
-				"\t.+/github.com/pantsmann/errors/format_test.go:%d", lineNum(-9)),
-			"messageA",
-			"error data: map[key:1]",
-			fmt.Sprintf("github.com/pantsmann/errors.TestFormatWrapWithData\n" +
-				"\t.+/github.com/pantsmann/errors/format_test.go:%d", lineNum(-14)),
-			"message2",
-			fmt.Sprintf("github.com/pantsmann/errors.TestFormatWrapWithData\n" +
-				"\t.+/github.com/pantsmann/errors/format_test.go:%d", lineNum(-19)),
-			"messageB",
-			"error data: map[key:val]",
-			fmt.Sprintf("github.com/pantsmann/errors.TestFormatWrapWithData\n" +
-				"\t.+/github.com/pantsmann/errors/format_test.go:%d", lineNum(-24))},
+			"ERROR DATA: map[key:val]"},
 	}}
 
 	for i, tt := range tests {
@@ -552,16 +429,16 @@ func TestFormatGeneric(t *testing.T) {
 					fmt.Sprintf(".+/github.com/pantsmann/errors/format_test.go:%d", lineNum(-4)),
 			},
 		}, {
-			func(err error) error { return Wrapf(err, "wrapf-error%d", 1) },
+			func(err error) error { return Wrap(err, "wrapf-error%d", 1) },
 			[]string{
 				"wrapf-error1",
 				"github.com/pantsmann/errors.(func·004|TestFormatGeneric.func4)\n\t" +
 					fmt.Sprintf(".+/github.com/pantsmann/errors/format_test.go:%d", lineNum(-4)),
 			},
 		}, {
-			func(err error) error { return WithData(err, "key", "val") },
+			func(err error) error { return WithData(err, KVPairs{"key": "val"}) },
 			[]string{
-				"error data: map[key:val]",
+				"ERROR DATA: map[key:val]",
 			},
 		},
 	}
@@ -604,6 +481,8 @@ func lineNum(shift int) int {
 }
 
 func testFormatRegexp(t *testing.T, n int, arg interface{}, format, want string) {
+	//fmt.Printf(format + "\n---\n%s\n____________\n" , arg, want) // for debugging
+
 	t.Helper()
 	got := fmt.Sprintf(format, arg)
 	gotLines := strings.SplitN(got, "\n", -1)

@@ -1,11 +1,11 @@
 package errors
 
 import (
-	"runtime"
 	"errors"
 	"fmt"
 	"io"
 	"regexp"
+	"runtime"
 	"strings"
 	"testing"
 )
@@ -18,6 +18,10 @@ func TestFormatNew(t *testing.T) {
 	}{{
 		New("error"),
 		"%s",
+		"error",
+	}, {
+		New("error"),
+		"%#s",
 		"error",
 	}, {
 		New("error"),
@@ -52,6 +56,10 @@ func TestFormatErrorf(t *testing.T) {
 		"error",
 	}, {
 		Errorf("%s", "error"),
+		"%#s",
+		"error",
+	}, {
+		Errorf("%s", "error"),
 		"%v",
 		"error",
 	}, {
@@ -78,6 +86,10 @@ func TestFormatWrap(t *testing.T) {
 		"error2: error",
 	}, {
 		Wrap(New("error"), "error2"),
+		"%#s",
+		"error2",
+	}, {
+		Wrap(New("error"), "error2"),
 		"%v",
 		"error2: error",
 	}, {
@@ -90,6 +102,10 @@ func TestFormatWrap(t *testing.T) {
 		Wrap(io.EOF, "error"),
 		"%s",
 		"error: EOF",
+	}, {
+		Wrap(io.EOF, "error"),
+		"%#s",
+		"error",
 	}, {
 		Wrap(io.EOF, "error"),
 		"%v",
@@ -130,6 +146,10 @@ func TestFormatWrapf(t *testing.T) {
 		"error2: EOF",
 	}, {
 		Wrap(io.EOF, "error%d", 2),
+		"%#s",
+		"error2",
+	}, {
+		Wrap(io.EOF, "error%d", 2),
 		"%v",
 		"error2: EOF",
 	}, {
@@ -143,6 +163,10 @@ func TestFormatWrapf(t *testing.T) {
 		Wrap(New("error"), "error%d", 2),
 		"%s",
 		"error2: error",
+	}, {
+		Wrap(New("error"), "error%d", 2),
+		"%#s",
+		"error2",
 	}, {
 		Wrap(New("error"), "error%d", 2),
 		"%v",
@@ -171,6 +195,10 @@ func TestFormatWithStack(t *testing.T) {
 		[]string{"EOF"},
 	}, {
 		WithStack(io.EOF),
+		"%#s",
+		[]string{"EOF"},
+	}, {
+		WithStack(io.EOF),
 		"%v",
 		[]string{"EOF"},
 	}, {
@@ -182,6 +210,10 @@ func TestFormatWithStack(t *testing.T) {
 	}, {
 		WithStack(New("error")),
 		"%s",
+		[]string{"error"},
+	}, {
+		WithStack(New("error")),
+		"%#s",
 		[]string{"error"},
 	}, {
 		WithStack(New("error")),
@@ -240,6 +272,10 @@ func TestFormatWithMessage(t *testing.T) {
 		[]string{"error2: error"},
 	}, {
 		WithMessage(New("error"), "error2"),
+		"%#s",
+		[]string{"error2"},
+	}, {
+		WithMessage(New("error"), "error2"),
 		"%v",
 		[]string{"error2: error"},
 	}, {
@@ -254,6 +290,10 @@ func TestFormatWithMessage(t *testing.T) {
 		WithMessage(io.EOF, "addition1"),
 		"%s",
 		[]string{"addition1: EOF"},
+	}, {
+		WithMessage(io.EOF, "addition1"),
+		"%#s",
+		[]string{"addition1"},
 	}, {
 		WithMessage(io.EOF, "addition1"),
 		"%v",
@@ -320,6 +360,10 @@ func TestFormatWithData(t *testing.T) {
 		[]string{"EOF"},
 	}, {
 		WithData(io.EOF, KVPairs{"key": "val"}),
+		"%#s",
+		[]string{"EOF"},
+	}, {
+		WithData(io.EOF, KVPairs{"key": "val"}),
 		"%v",
 		[]string{"EOF"},
 	}, {
@@ -333,20 +377,24 @@ func TestFormatWithData(t *testing.T) {
 		[]string{"error"},
 	}, {
 		WithData(New("error"), KVPairs{"key": "val"}),
+		"%#s",
+		[]string{"error"},
+	}, {
+		WithData(New("error"), KVPairs{"key": "val"}),
 		"%v",
 		[]string{"error"},
 	}, {
 		WithData(New("error"), KVPairs{"key": "val"}),
 		"%+v",
 		[]string{"error",
-			fmt.Sprintf("github.com/pantsmann/errors.TestFormatWithData\n" +
+			fmt.Sprintf("github.com/pantsmann/errors.TestFormatWithData\n"+
 				"\t.+/github.com/pantsmann/errors/format_test.go:%d", lineNum(-4)),
 			"ERROR DATA: map[key:val]"},
 	}, {
 		WithData(WithStack(io.EOF), KVPairs{"key": "val"}),
 		"%+v",
 		[]string{"EOF",
-			fmt.Sprintf("github.com/pantsmann/errors.TestFormatWithData\n" +
+			fmt.Sprintf("github.com/pantsmann/errors.TestFormatWithData\n"+
 				"\t.+/github.com/pantsmann/errors/format_test.go:%d", lineNum(-4)),
 			"ERROR DATA: map[key:val]"},
 	}, {
@@ -354,36 +402,36 @@ func TestFormatWithData(t *testing.T) {
 		"%+v",
 		[]string{"EOF",
 			"message",
-			fmt.Sprintf("github.com/pantsmann/errors.TestFormatWithData\n" +
+			fmt.Sprintf("github.com/pantsmann/errors.TestFormatWithData\n"+
 				"\t.+/github.com/pantsmann/errors/format_test.go:%d", lineNum(-5)),
-			fmt.Sprintf("github.com/pantsmann/errors.TestFormatWithData\n" +
+			fmt.Sprintf("github.com/pantsmann/errors.TestFormatWithData\n"+
 				"\t.+/github.com/pantsmann/errors/format_test.go:%d", lineNum(-7)),
 			"ERROR DATA: map[key:val]"},
 	}, {
 		WithData(Errorf("error%d", 1), KVPairs{"key": "val"}),
 		"%+v",
 		[]string{"error1",
-		fmt.Sprintf("github.com/pantsmann/errors.TestFormatWithData\n" +
-			"\t.+/github.com/pantsmann/errors/format_test.go:%d", lineNum(-4)),
-		"ERROR DATA: map[key:val]"},
+			fmt.Sprintf("github.com/pantsmann/errors.TestFormatWithData\n"+
+				"\t.+/github.com/pantsmann/errors/format_test.go:%d", lineNum(-4)),
+			"ERROR DATA: map[key:val]"},
 	}, {
 		WithData(
 			WithStack(
 				WithMessage(
 					WithData(
-						Wrap(io.EOF, "message"), 
+						Wrap(io.EOF, "message"),
 						KVPairs{"key": 1}),
 					"message2"),
-				),
+			),
 			KVPairs{"key": "val"}),
 		"%+v",
 		[]string{"EOF",
 			"message",
-			fmt.Sprintf("github.com/pantsmann/errors.TestFormatWithData\n" +
+			fmt.Sprintf("github.com/pantsmann/errors.TestFormatWithData\n"+
 				"\t.+/github.com/pantsmann/errors/format_test.go:%d", lineNum(-9)),
 			"ERROR DATA: map[key:1]",
 			"message2",
-			fmt.Sprintf("github.com/pantsmann/errors.TestFormatWithData\n" +
+			fmt.Sprintf("github.com/pantsmann/errors.TestFormatWithData\n"+
 				"\t.+/github.com/pantsmann/errors/format_test.go:%d", lineNum(-16)),
 			"ERROR DATA: map[key:val]"},
 	}}
@@ -507,22 +555,21 @@ func testFormatRegexp(t *testing.T, n int, arg interface{}, format, want string)
 var stackLineR = regexp.MustCompile(`\.`)
 
 // parseBlocks parses input into a slice, where:
-//  - incase entry contains a newline, its a stacktrace
-//  - incase entry contains no newline, its a solo line.
+//   - incase entry contains a newline, its a stacktrace
+//   - incase entry contains no newline, its a solo line.
 //
 // Detecting stack boundaries only works incase the WithStack-calls are
 // to be found on the same line, thats why it is optionally here.
 //
 // Example use:
 //
-// for _, e := range blocks {
-//   if strings.ContainsAny(e, "\n") {
-//     // Match as stack
-//   } else {
-//     // Match as line
-//   }
-// }
-//
+//	for _, e := range blocks {
+//	  if strings.ContainsAny(e, "\n") {
+//	    // Match as stack
+//	  } else {
+//	    // Match as line
+//	  }
+//	}
 func parseBlocks(input string, detectStackboundaries bool) ([]string, error) {
 	var blocks []string
 

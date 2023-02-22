@@ -182,8 +182,9 @@ func Example_stackTrace() {
 		panic("oops, err does not implement stackTracer")
 	}
 
-	st := err.StackTrace()
-	fmt.Printf("%+v", st[0:2]) // top two frames
+	if st := err.StackTrace(); st != nil {
+		fmt.Printf("%+v", st[0:2]) // top two frames
+	}
 
 	// Example output:
 	// github.com/pantsmann/errors_test.fn

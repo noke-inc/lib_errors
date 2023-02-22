@@ -41,7 +41,7 @@ func (e *Basic) Unwrap() error { return e.error }
 // "%q" - same as %s, but quoted.
 // "%v" - same as %s.
 //
-// "%^s" - outputs the outermost message only.
+// "%#s" - outputs the outermost message only.
 // "%+v" - outputs each annotation with any associated message, debug data, and/or stack trace.
 func (e *Basic) Format(s fmt.State, verb rune) {
 	switch verb {
@@ -74,11 +74,11 @@ func (e *Basic) Format(s fmt.State, verb rune) {
 		}
 		fallthrough
 	case 's':
-		if s.Flag('^') {
+		if s.Flag('#') {
 			if msg, ok := e.data[msgKey]; ok {
 				io.WriteString(s, msg.(string))
 			} else {
-				fmt.Fprintf(s, "%^s", e.Unwrap())
+				fmt.Fprintf(s, "%#s", e.Unwrap())
 			}
 		} else {
 			io.WriteString(s, e.Error())
@@ -104,6 +104,9 @@ func (e *Basic) SetKeyVal(k string, v interface{}) error {
 	if e.isReservedKey(k) {
 		return Errorf("cannot use a reserved key (string starting with '_')")
 	}
+	if e.data == nil {
+		e.data = make(KVPairs)
+	}
 	e.data[k] = v
 	return nil
 }
@@ -111,6 +114,9 @@ func (e *Basic) SetKeyVal(k string, v interface{}) error {
 // SetData sets all the key/value pairs found in the given map.
 // Reserved key strings are skipped.
 func (e *Basic) SetData(d KVPairs) {
+	if e.data == nil {
+		e.data = make(KVPairs)
+	}
 	for key, val := range d {
 		if e.isReservedKey(key) {
 			continue
@@ -122,12 +128,15 @@ func (e *Basic) SetData(d KVPairs) {
 // GetValue returns the value for the first instance of key found in the entire error graph.
 // The return value 'found' is true if key is found, false otherwise. (pre-order, depth-first)
 func (e *Basic) GetValue(key string) (val interface{}, found bool) {
-	if !e.isReservedKey(key) {
-		val, found = e.data[key]
-		if found {
-			return
-		}
+	if e.isReservedKey(key) {
+		return nil, false
 	}
+
+	val, found = e.data[key]
+	if found {
+		return
+	}
+	
 	if e.error == nil {
 		return nil, false
 	}

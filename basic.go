@@ -131,12 +131,15 @@ func (e *Basic) GetValue(key string) (val interface{}, found bool) {
 	if e.isReservedKey(key) {
 		return nil, false
 	}
+	if e.data == nil {
+		e.data = make(KVPairs)
+	}
 
 	val, found = e.data[key]
 	if found {
 		return
 	}
-	
+
 	if e.error == nil {
 		return nil, false
 	}
@@ -174,8 +177,10 @@ func (e *Basic) GetAllData() KVPairs {
 				d = de.GetAllData()
 			}
 		case interface{ Unwrap() []error }:
-			for _, err := range x.Unwrap() {
-				if As(err, &de) {
+			multi := x.Unwrap()
+			last := len(multi)-1
+			for i := range multi {
+				if As(multi[last-i], &de) {
 					tmp := de.GetAllData()
 					for k, v := range tmp {
 						d[k] = v

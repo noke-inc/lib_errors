@@ -7,6 +7,8 @@ import (
 	"io"
 	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestNew(t *testing.T) {
@@ -170,13 +172,16 @@ func TestWithStack(t *testing.T) {
 	}{
 		{io.EOF, "EOF"},
 		{WithStack(io.EOF), "EOF"},
+		{errNilFlag, ""},
 	}
 
 	for _, tt := range tests {
-		got := WithStack(tt.err).Error()
+		err := WithStack(tt.err)
+		got := err.Error()
 		if got != tt.want {
 			t.Errorf("WithStack(%v): got: %v, want %v", tt.err, got, tt.want)
 		}
+		assert.NotNil(t, err.(*Basic).StackTrace())
 	}
 }
 
@@ -245,15 +250,21 @@ func TestWithData(t *testing.T) {
 		want       string
 		wantedData KVPairs
 	}{
-		{io.EOF,
+		{
+			io.EOF,
 			KVPairs{"first": 1},
 			"EOF",
 			KVPairs{"first": 1},
-		},
-		{WithData(io.EOF, KVPairs{"first": 1, "greeting": "hi", "even": false}),
+		}, {
+			WithData(io.EOF, KVPairs{"first": 1, "greeting": "hi", "even": false}),
 			KVPairs{"second": 2, "greeting": "hello"},
 			"EOF",
 			KVPairs{"second": 2, "greeting": "hello", "first": 1, "even": false},
+		}, {
+			errNilFlag,
+			KVPairs{"third":3 },
+			"",
+			KVPairs{"third":3 },
 		},
 	}
 

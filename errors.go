@@ -105,7 +105,7 @@ func WithMessage(err error, format string, args ...interface{}) error {
 	return WithMessageD(err, nil, format, args...)
 }
 
-// WithMessage augments error with a message and debug data simultaneously.
+// WithMessageD augments error with a message and debug data simultaneously.
 func WithMessageD(err error, data KVPairs, format string, args ...interface{}) error {
 	if err == nil {
 		return nil

@@ -257,8 +257,7 @@ func TestWithData(t *testing.T) {
 		},
 	}
 
-	
-	var d DataKeeper
+	var d DataError
 
 	for _, tt := range tests {
 		err := WithData(tt.err, tt.keyVal)

@@ -203,3 +203,62 @@ func ExampleCause_printf() {
 
 	// Output: failed: hello world
 }
+
+func NewFancy() fancy {
+	return fancy{&errors.Basic{}}
+}
+
+type fancy struct {
+	*errors.Basic
+}
+
+func (f fancy) Fancy() bool {
+	return true
+}
+
+func Example_typechecking() {
+	// Assuming an error called fancy is defined as follows:
+	//
+	//	func NewFancy() fancy {
+	//		return fancy{&errors.Basic{}}
+	//	}
+	//
+	//	type fancy struct {
+	//		*errors.Basic
+	//	}
+	//
+	//	func (f fancy) Fancy() bool {
+	//		return true
+	//	}
+	//
+	// You can wrap an error in a special type like so:
+
+	plain := errors.New("inside")
+	fancy := NewFancy()
+	fancy.Wrap(plain)
+	layer3 := errors.WithMessage(fancy, "outside")
+
+	//		The code above, including the code in the first comment block,
+	//		would be defined in the function or file where the error gets
+	//		created.
+	//		The code below would be implemented in a different function that is a 
+	//		consumer of the error.
+	//		For example, the code above could be part of the model while the code 
+	//		below is in an endpoint handler.
+	//		Note the the Fancier interface is not explicitly defined, but it is
+	//		implicitly part of the package fancy is defined in.
+
+	// To test for Fancier errors further down the call stack you could do the following:
+	isFancier := func(err error) bool {
+		var fancier interface{ Fancy() bool }
+		return errors.As(err, &fancier) && fancier.Fancy()
+	}
+
+	fmt.Printf("plain is a Fancier: %v\n", isFancier(plain))
+	fmt.Printf("fancy is a Fancier: %v\n", isFancier(fancy))
+	fmt.Printf("layer3 is a Fancier: %v\n", isFancier(layer3))
+
+	// Output: plain is a Fancier: false
+	// fancy is a Fancier: true
+	// layer3 is a Fancier: true
+}

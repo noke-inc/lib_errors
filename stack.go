@@ -67,7 +67,7 @@ func (f Frame) Format(s fmt.State, verb rune) {
 		switch {
 		case s.Flag('+'):
 			io.WriteString(s, f.name())
-			io.WriteString(s, "\n\t")
+			io.WriteString(s, "\n\t\t")
 			io.WriteString(s, f.file())
 		default:
 			io.WriteString(s, path.Base(f.file()))
@@ -110,7 +110,7 @@ func (st StackTrace) Format(s fmt.State, verb rune) {
 		switch {
 		case s.Flag('+'):
 			for _, f := range st {
-				io.WriteString(s, "\n")
+				io.WriteString(s, "\n\t")
 				f.Format(s, verb)
 			}
 		case s.Flag('#'):
@@ -146,7 +146,7 @@ func (s *stack) Format(st fmt.State, verb rune) {
 		case st.Flag('+'):
 			for _, pc := range *s {
 				f := Frame(pc)
-				fmt.Fprintf(st, "\n%+v", f)
+				fmt.Fprintf(st, "\n\t%+v", f)
 			}
 		}
 	}

@@ -9,6 +9,7 @@ const (
 
 	msgKey   = `_msg`
 	stackKey = `_stack`
+	abbrStackKey = `_abbrstk`
 )
 
 // since we use one struct to represent errors and wrapper errors this variable
@@ -89,15 +90,51 @@ func doWrap(level int, err error, data KVPairs, format string, args ...interface
 	e := &Basic{
 		error: err,
 		data: KVPairs{
-			stackKey: callers(level),
 			msgKey:   formatMsg(format, args...),
 		},
 	}
+
+	if abbr, stk := useAbbreviatedStack(err, callers(level)); abbr{
+		e.data[abbrStackKey] = stk
+	} else {
+		e.data[stackKey] = stk
+	}
+
 	if data != nil {
 		e.SetData(data)
 	}
 
 	return e
+}
+
+func useAbbreviatedStack(err error, s *stack) (bool, *stack) {
+	var st interface{StackTrace() StackTrace}
+	if As(err, &st) {
+		inner := st.StackTrace()
+		outer := s.StackTrace()
+		lastIn := len(inner)-1
+		lastOut := len(outer)-1
+		var i int
+		foundDiff := false
+		for i = range outer {
+			if outer[lastOut-i] != inner[lastIn-i] {
+				foundDiff = true
+				break
+			}
+		}
+		switch {
+		case i == 0: //do nothing
+		case i == 1: 
+			fallthrough
+		case !foundDiff:
+			stk := (*s)[:len(outer)-i]
+			return true, &stk
+		default:
+			stk := (*s)[:len(outer)-i+1]
+			return true, &stk
+		}
+	}
+	return false, s
 }
 
 // WithMessage augments error with a message only.

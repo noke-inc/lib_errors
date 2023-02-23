@@ -53,21 +53,26 @@ func (e *Basic) Format(s fmt.State, verb rune) {
 				//fmt.Fprintf(s, "******** unwrap *******\n") // for debugging
 				fmt.Fprintf(s, "%+v", e.Unwrap())
 			}
+			if err != nil {
+				io.WriteString(s, "\n")
+			}
 			if mOk {
-				if err != nil {
-					io.WriteString(s, "\n")
-				}
 				io.WriteString(s, msg.(string))
 			}
+			io.WriteString(s, " >>>")
 			d := make(KVPairs)
 			e.addMyData(d)
 			if len(d) > 0 {
 				if err != nil || mOk {
-					io.WriteString(s, "\n")
+					io.WriteString(s, "\n\t")
 				}
 				fmt.Fprintf(s, "ERROR DATA: %+v", d)
 			}
 			if stk, ok := e.data[stackKey]; ok {
+				io.WriteString(s, "\n\tSTACK TRACE:")
+				stk.(*stack).Format(s, verb)
+			} else if stk, ok := e.data[abbrStackKey]; ok {
+				io.WriteString(s, "\n\tSTACK TRACE (abbr.):")
 				stk.(*stack).Format(s, verb)
 			}
 			return
@@ -88,10 +93,24 @@ func (e *Basic) Format(s fmt.State, verb rune) {
 	}
 }
 
-// StackTrace outputs the stack of Frames attached to this error, from innermost (newest) to outermost (oldest).
+// StackTrace returns the first full stack trace found in the error chain.
+// Search stops if e.Unwrap() ever returns []error.
+// Returns nil if no full stack trace found.
 func (e *Basic) StackTrace() StackTrace {
 	if stk, ok := e.data[stackKey]; ok {
 		return stk.(*stack).StackTrace()
+	}
+
+	if e.error == nil {
+		return nil
+	}
+
+	var be *Basic
+	switch x := e.error.(type) {
+	case interface{ Unwrap() error }:
+		if As(x.(error), &be) {
+			return be.StackTrace()
+		}
 	}
 	return nil
 }

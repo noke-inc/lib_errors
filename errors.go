@@ -117,6 +117,9 @@ func useAbbreviatedStack(err error, s *stack) (bool, *stack) {
 		var i int
 		foundDiff := false
 		for i = range outer {
+			if lastOut-i < 0 || lastIn-i < 0 {
+				break
+			}
 			if outer[lastOut-i] != inner[lastIn-i] {
 				foundDiff = true
 				break

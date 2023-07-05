@@ -21,7 +21,7 @@ errors, or in previous version [golang.org/x/xerrors](https://golang.org/x/xerro
 ## How to start using friendsofgo/errors
 
 If you previously was using the package [github.com/pkg/errors](https://github.com/pkg/errors), you only need
-change your imports for **github.com/pantsmann/errors**, with this simple change now you're capable to use
+change your imports for **github.com/noke-inc/lib_errors**, with this simple change now you're capable to use
 [go 1.13](https://godoc.org/errors) in your code, and use the new methods `As` and `Is` if you want.
 
 Furthermore the methods `Wrap` and `Wrapf` become compatible with `Unwrap` interface of new [go 1.13](https://godoc.org/errors) errors.
@@ -100,4 +100,4 @@ This package was created to using with go 1.13 version however if you uses this 
 
 ## Contributing
 
-[Contributions](https://github.com/pantsmann/errors/issues?q=is%3Aissue+is%3Aopen) are more than welcome, if you are interested please fork this repo and send your Pull Request.
+[Contributions](https://github.com/noke-inc/lib_errors/issues?q=is%3Aissue+is%3Aopen) are more than welcome, if you are interested please fork this repo and send your Pull Request.
